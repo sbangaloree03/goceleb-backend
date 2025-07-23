@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 
+
+
 const app = express();
 const PORT = 5000;
 
@@ -16,15 +18,16 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.set('trust proxy', 1); // ✅ trust Render proxy
 app.use(
   session({
     secret: 'secret-key', // change in production
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // true if using HTTPS
+      secure: true, // true if using HTTPS
       httpOnly: true,
+      sameSite: 'none' // ✅ allow cross-site cookies
     },
   })
 );
@@ -105,7 +108,7 @@ app.post('/celebrities', upload.single('image'), (req, res) => {
     name,
     category,
     bio,
-    image: `http://localhost:5000/uploads/${image.filename}`,
+    image: `https://goceleb-backend.onrender.com/uploads/${image.filename}`,
   };
 
   celebrities.push(newCeleb);
