@@ -157,5 +157,46 @@ app.delete('/celebrities', (req, res) => {
   res.json({ success: true });
 });
 
+const nodemailer = require('nodemailer');
+
+app.post('/contact', async (req, res) => {
+  const { firstName, lastName, email, phone, service, message } = req.body;
+
+  const transporter = nodemailer.createTransport({
+    host: 'mail.gocelebstars.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'notification@gocelebstars.com',
+      pass: 'b?5=mGvx,N~F5IA5'
+    }
+  });
+
+  const mailOptions = {
+    from: `"${firstName} ${lastName}" <${email}>`,
+    to: 'gocelebstars@gmail.com',
+    subject: `Contact Request for ${service}`,
+    html: `
+      <h3>New Contact Form Submission</h3>
+      <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Service:</strong> ${service}</p>
+      <p><strong>Message:</strong></p>
+      <p>${message}</p>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ success: true, message: 'Email sent successfully!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Failed to send email.' });
+  }
+});
+
+
+
 
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
