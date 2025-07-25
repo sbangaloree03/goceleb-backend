@@ -103,6 +103,33 @@ app.post('/celebrities', upload.single('image'), (req, res) => {
     return res.json({ success: false, error: 'Missing fields' });
   }
 
+  // ✅ 1. Move image to public/movie/
+  const movieDir = path.join(__dirname, 'public', 'movie');
+  if (!fs.existsSync(movieDir)) fs.mkdirSync(movieDir, { recursive: true });
+
+  const newFileName = `${Date.now()}-${image.originalname}`;
+  const moviePath = path.join(movieDir, newFileName);
+  fs.copyFileSync(image.path, moviePath); // Copy image
+  fs.unlinkSync(image.path); // Delete from uploads
+
+  // ✅ 2. Add to uploads.json
+  const uploadsJsonPath = path.join(__dirname, 'public', 'uploads.json');
+  let uploads = [];
+  try {
+    const raw = fs.readFileSync(uploadsJsonPath, 'utf-8');
+    uploads = JSON.parse(raw);
+  } catch {
+    uploads = [];
+  }
+
+  uploads.push({
+    name: name,
+    image: `movie/${newFileName}`,
+  });
+
+  fs.writeFileSync(uploadsJsonPath, JSON.stringify(uploads, null, 2));
+
+  // ✅ 3. Save to celebrities.json (no changes)
   const newCeleb = {
     id: nextId++,
     name,
@@ -117,6 +144,7 @@ app.post('/celebrities', upload.single('image'), (req, res) => {
   res.json({ success: true, ...newCeleb });
 });
 
+
 // ✅ Delete celeb
 app.delete('/celebrities', (req, res) => {
   if (!req.session.isLoggedIn) {
@@ -128,5 +156,6 @@ app.delete('/celebrities', (req, res) => {
   saveCelebrities(celebrities);
   res.json({ success: true });
 });
+
 
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
